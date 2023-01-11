@@ -1,9 +1,10 @@
 import express from "express";
 import client from "ssh2-sftp-client";
+import { writeFileSync } from "fs";
+// import { readFile } from "fs/promises";
 
 const sftp = new client();
 const app = express();
-const fs = require("fs");
 
 app.use(express.json());
 
@@ -77,5 +78,6 @@ function sendFile({
 }
 
 function createFile({ fileName: fileName, content: content }) {
-	fs.writeFileSync("/tmp/" + fileName, content);
+	// readFileSync.createWriteStream("/tmp/file.txt", "Hey there!");
+	writeFileSync("temp/" + fileName, content);
 }

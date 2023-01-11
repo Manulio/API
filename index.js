@@ -29,18 +29,30 @@ app.post("/api/elegibilityFile/part", (req, res) => {
 });
 
 app.post("/api/elegibilityFile/sendFile", async (req, res) => {
-	sendFile({
-		host: req.body.host,
-		username: req.body.username,
-		password: req.body.password,
-		port: req.body.port,
-		path: req.body.path,
-		file: await mergeFile({
-			fileId: req.body.fileId,
-			fileName: req.body.fileName,
-		}),
+	const promise1 = new Promise((resolve, reject) => {
+		resolve(
+			mergeFile({
+				fileId: req.body.fileId,
+				fileName: req.body.fileName,
+			})
+		);
 	});
-	res.send("Recieved Successfully");
+
+	promise1.then((value) => {
+		try {
+			sendFile({
+				host: req.body.host,
+				username: req.body.username,
+				password: req.body.password,
+				port: req.body.port,
+				path: req.body.path + "/" + req.body.fileName,
+				file: value,
+			});
+			res.send("Recieved Successfully");
+		} catch (e) {
+			res.send("Error: " + e.message);
+		}
+	});
 });
 
 const port = process.env.PORT || 80;
@@ -52,7 +64,7 @@ function mergeFile({ fileId: fileId, fileName: fileName }) {
 		content: fileParts
 			.filter((a) => a.fileId == fileId)
 			.map((a) => a.content)
-			.join(),
+			.join(""),
 	});
 }
 
@@ -64,6 +76,12 @@ function sendFile({
 	path: path,
 	file: file,
 }) {
+	const putConfig = {
+		flags: "w", // w - write and a - append
+		encoding: null, // use null for binary files
+		mode: 77777, // mode to use for created file (rwx)
+		autoClose: true, // automatically close the write stream when finished
+	};
 	sftp
 		.connect({
 			host: host,
@@ -72,7 +90,7 @@ function sendFile({
 			password: password,
 		})
 		.then(() => {
-			sftp.put(file, path);
+			sftp.fastPut(file, path, putConfig);
 			sftp.end();
 		})
 		.catch((err) => {

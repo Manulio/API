@@ -1,17 +1,26 @@
 {
-	"dependencies": {
-		"express": "^4.18.2",
-		"fs": "^0.0.1-security",
-		"ssh2-sftp-client": "^9.0.4"
-	},
-	"name": "api",
-	"version": "1.0.0",
-	"main": "index.js",
-	"type": "module",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"author": "",
-	"license": "ISC",
-	"description": ""
+  "dependencies": {
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "ssh2-sftp-client": "^9.0.4"
+  },
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manulio/API.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Manulio/API/issues"
+  },
+  "homepage": "https://github.com/Manulio/API#readme",
+  "description": ""
 }

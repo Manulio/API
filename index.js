@@ -1,37 +1,81 @@
 import express from "express";
+import client from "ssh2-sftp-client";
 
+const sftp = new client();
 const app = express();
+const fs = require("fs");
 
 app.use(express.json());
 
-const students = [
-	{ id: 1, name: "pepe" },
-	{ id: 2, name: "jorge" },
-];
+const fileParts = [];
 
 app.get("/", (req, res) => {
-	res.send("CVS api");
+	res.send("CVS Elegibility File API");
 });
 
-app.get("/api/students", (req, res) => {
-	res.send(students);
+app.get("/api/elegibilityFile", (req, res) => {
+	res.send(fileParts);
 });
 
-app.get("/api/students/:id", (req, res) => {
-	const student = students.find((c) => c.id === parseInt(req.params.id));
-	if (student) {
-		res.send(students);
-	}
-});
-
-app.post("/api/students/", (req, res) => {
-	const student = {
-		id: students.length + 1,
-		name: req.body.name,
+app.post("/api/elegibilityFile/part", (req, res) => {
+	const elegibilityFilePart = {
+		index: fileParts.filter((a) => a.fileId == req.body.fileId).length + 1,
+		fileId: req.body.fileId,
+		name: req.body.content,
 	};
-	students.push(student);
-	res.send(student);
+	fileParts.push(elegibilityFilePart);
+	res.send("Recieved Successfully");
+});
+
+app.post("/api/elegibilityFile/sendFile", (req, res) => {
+	sendFile({
+		host: req.body.host,
+		username: req.body.username,
+		password: req.body.password,
+		port: req.body.port,
+		path: req.body.path,
+		file: mergeFile({
+			fileId: req.body.fileId,
+			fileName: req.body.fileName,
+		}),
+	});
+	res.send("Recieved Successfully");
 });
 
 const port = process.env.PORT || 80;
 app.listen(port, () => console.log(`listening on port ${port}`));
+
+function mergeFile({ fileId: fileId, fileName: fileName }) {
+	return createFile({
+		fileName: fileName,
+		content: fileParts.filter((a) => a.fileId == fileId).join(),
+	});
+}
+
+function sendFile({
+	host: host,
+	username: username,
+	password: password,
+	port: port,
+	path: path,
+	file: file,
+}) {
+	sftp
+		.connect({
+			host: host,
+			port: port,
+			username: username,
+			password: password,
+		})
+		.then(() => {
+			sftp.put(file, path);
+			sftp.end();
+		})
+		.catch((err) => {
+			console.log(err, "catch error");
+		});
+}
+
+function createFile({ fileName: fileName, content: content }) {
+	fs.writeFileSync("/tmp/" + fileName, content);
+}

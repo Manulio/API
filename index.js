@@ -22,7 +22,7 @@ app.post("/api/elegibilityFile/part", (req, res) => {
 	const elegibilityFilePart = {
 		index: fileParts.filter((a) => a.fileId == req.body.fileId).length + 1,
 		fileId: req.body.fileId,
-		name: req.body.content,
+		content: req.body.content,
 	};
 	fileParts.push(elegibilityFilePart);
 	res.send("Recieved Successfully");
@@ -49,7 +49,10 @@ app.listen(port, () => console.log(`listening on port ${port}`));
 function mergeFile({ fileId: fileId, fileName: fileName }) {
 	return createFile({
 		fileName: fileName,
-		content: fileParts.filter((a) => a.fileId == fileId).join(),
+		content: fileParts
+			.filter((a) => a.fileId == fileId)
+			.map((a) => a.content)
+			.join(),
 	});
 }
 

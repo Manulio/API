@@ -28,14 +28,14 @@ app.post("/api/elegibilityFile/part", (req, res) => {
 	res.send("Recieved Successfully");
 });
 
-app.post("/api/elegibilityFile/sendFile", (req, res) => {
+app.post("/api/elegibilityFile/sendFile", async (req, res) => {
 	sendFile({
 		host: req.body.host,
 		username: req.body.username,
 		password: req.body.password,
 		port: req.body.port,
 		path: req.body.path,
-		file: mergeFile({
+		file: await mergeFile({
 			fileId: req.body.fileId,
 			fileName: req.body.fileName,
 		}),

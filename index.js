@@ -5,29 +5,29 @@ import { writeFileSync, unlink } from "fs";
 const sftp = new client();
 const app = express();
 
-app.use(express.json());
-
 const fileParts = [];
 
+app.use(express.json());
+
 app.get("/", (req, res) => {
-	res.send("CVS Elegibility File API");
+	res.send("Merge Files API");
 });
 
-app.get("/api/elegibilityFile", (req, res) => {
+app.get("/api/merge-files", (req, res) => {
 	res.send(fileParts);
 });
 
-app.post("/api/elegibilityFile/part", (req, res) => {
-	const elegibilityFilePart = {
+app.post("/api/merge-files/send-part", (req, res) => {
+	const filePart = {
 		index: fileParts.filter((a) => a.fileId == req.body.fileId).length + 1,
 		fileId: req.body.fileId,
 		content: req.body.content,
 	};
-	fileParts.push(elegibilityFilePart);
+	fileParts.push(filePart);
 	res.send("Recieved Successfully");
 });
 
-app.post("/api/elegibilityFile/sendFile", (req, res) => {
+app.post("/api/merge-files/send-file-sftp", (req, res) => {
 	sendFileHandler({
 		connection: {
 			host: req.body.host,

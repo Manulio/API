@@ -1,7 +1,6 @@
 import express from "express";
 import client from "ssh2-sftp-client";
-import { writeFileSync } from "fs";
-// import { readFile } from "fs/promises";
+import { writeFileSync, readFileSync, unlink } from "fs";
 
 const sftp = new client();
 const app = express();
@@ -28,77 +27,55 @@ app.post("/api/elegibilityFile/part", (req, res) => {
 	res.send("Recieved Successfully");
 });
 
-app.post("/api/elegibilityFile/sendFile", async (req, res) => {
-	const promise1 = new Promise((resolve, reject) => {
-		resolve(
-			mergeFile({
-				fileId: req.body.fileId,
-				fileName: req.body.fileName,
-			})
-		);
+app.post("/api/elegibilityFile/sendFile", (req, res) => {
+	sendFileHandler({
+		connection: {
+			host: req.body.host,
+			username: req.body.username,
+			password: req.body.password,
+			port: req.body.port,
+			path: req.body.path + "/" + req.body.fileName,
+		},
+		fileId: req.body.fileId,
+		fileName: req.body.fileName,
 	});
-
-	promise1.then((value) => {
-		try {
-			sendFile({
-				host: req.body.host,
-				username: req.body.username,
-				password: req.body.password,
-				port: req.body.port,
-				path: req.body.path + "/" + req.body.fileName,
-				file: value,
-			});
-			res.send("Recieved Successfully");
-		} catch (e) {
-			res.send("Error: " + e.message);
-		}
-	});
+	res.send("Recieved Successfully");
 });
 
 const port = process.env.PORT || 80;
 app.listen(port, () => console.log(`listening on port ${port}`));
 
-function mergeFile({ fileId: fileId, fileName: fileName }) {
-	return createFile({
-		fileName: fileName,
-		content: fileParts
+function sendFileHandler({
+	connection: connection,
+	fileId: fileId,
+	fileName: fileName,
+}) {
+	writeFileSync(
+		"temp/" + fileName + fileId,
+		fileParts
 			.filter((a) => a.fileId == fileId)
 			.map((a) => a.content)
-			.join(""),
-	});
-}
+			.join("")
+	);
 
-function sendFile({
-	host: host,
-	username: username,
-	password: password,
-	port: port,
-	path: path,
-	file: file,
-}) {
-	const putConfig = {
-		flags: "w", // w - write and a - append
-		encoding: null, // use null for binary files
-		mode: 77777, // mode to use for created file (rwx)
-		autoClose: true, // automatically close the write stream when finished
-	};
 	sftp
 		.connect({
-			host: host,
-			port: port,
-			username: username,
-			password: password,
+			host: connection.host,
+			port: connection.port,
+			username: connection.username,
+			password: connection.password,
 		})
-		.then(() => {
-			sftp.fastPut(file, path, putConfig);
+		.then(async () => {
+			await sftp.put(`./temp/${fileName}${fileId}`, connection.path, false);
 			sftp.end();
+			console.log(`Sending file ${fileName}`);
+		})
+		.finally(() => {
+			unlink(`./temp/${fileName}${fileId}`, () => {
+				console.log(`Removing file ${fileName}`);
+			});
 		})
 		.catch((err) => {
 			console.log(err, "catch error");
 		});
-}
-
-function createFile({ fileName: fileName, content: content }) {
-	// readFileSync.createWriteStream("/tmp/file.txt", "Hey there!");
-	writeFileSync("temp/" + fileName, content);
 }

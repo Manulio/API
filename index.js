@@ -1,6 +1,6 @@
 import express from "express";
 import client from "ssh2-sftp-client";
-import { writeFileSync, readFileSync, unlink } from "fs";
+import { writeFileSync, unlink } from "fs";
 
 const sftp = new client();
 const app = express();
@@ -38,8 +38,8 @@ app.post("/api/elegibilityFile/sendFile", (req, res) => {
 		},
 		fileId: req.body.fileId,
 		fileName: req.body.fileName,
+		res: res,
 	});
-	res.send("Recieved Successfully");
 });
 
 const port = process.env.PORT || 80;
@@ -49,6 +49,7 @@ function sendFileHandler({
 	connection: connection,
 	fileId: fileId,
 	fileName: fileName,
+	res: res,
 }) {
 	writeFileSync(
 		"temp/" + fileName + fileId,
@@ -57,25 +58,30 @@ function sendFileHandler({
 			.map((a) => a.content)
 			.join("")
 	);
-
-	sftp
-		.connect({
-			host: connection.host,
-			port: connection.port,
-			username: connection.username,
-			password: connection.password,
-		})
-		.then(async () => {
-			await sftp.put(`./temp/${fileName}${fileId}`, connection.path, false);
-			sftp.end();
-			console.log(`Sending file ${fileName}`);
-		})
-		.finally(() => {
-			unlink(`./temp/${fileName}${fileId}`, () => {
-				console.log(`Removing file ${fileName}`);
+	try {
+		sftp
+			.connect({
+				host: connection.host,
+				port: connection.port,
+				username: connection.username,
+				password: connection.password,
+			})
+			.then(async () => {
+				await sftp.put(`./temp/${fileName}${fileId}`, connection.path, false);
+				sftp.end();
+				console.log(`Sending file ${fileName}`);
+				res.send(true);
+			})
+			.finally(() => {
+				unlink(`./temp/${fileName}${fileId}`, () => {
+					console.log(`Removing file ${fileName}`);
+				});
+			})
+			.catch((err) => {
+				console.log(err, "catch error");
+				res.send(false);
 			});
-		})
-		.catch((err) => {
-			console.log(err, "catch error");
-		});
+	} catch (e) {
+		res.send(false);
+	}
 }
